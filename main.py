@@ -94,8 +94,7 @@ tools = [
             "type": "object",
             "properties": {
                 "system": {"type": "string", "enum": ["home", "farm"]},
-                "automation": {"type": "object", "description": "Full automation config object including alias, trigger,
-condition, action"}
+                "automation": {"type": "object", "description": "Full automation config object including alias, trigger, condition, action"}
             },
             "required": ["system", "automation"]
         }
@@ -125,8 +124,7 @@ def process_tool_call(tool_name: str, tool_input: dict):
 
 SYSTEM_PROMPT = """You are an expert Home Assistant advisor with access to two systems: 'home' and 'farm'.
 
-You can query entities, services, and automations, and you can make changes including calling services and creating
-automations.
+You can query entities, services, and automations, and you can make changes including calling services and creating automations.
 
 Guidelines:
 - Always fetch current entity data before making changes or giving advice so you use correct entity IDs
