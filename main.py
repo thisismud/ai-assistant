@@ -41,6 +41,13 @@ def build_system_context(system: str) -> str:
     if isinstance(states, dict) and "error" in states:
         return f"[{system.capitalize()} system unavailable: {states['error']}]"
 
+    # Domains where listing every entity ID is useful for Claude
+    DETAIL_DOMAINS = {
+        "light", "switch", "climate", "cover", "fan",
+        "media_player", "automation", "script", "scene",
+        "input_boolean", "input_select", "input_number"
+    }
+
     domains: dict = {}
     for state in states:
         domain = state["entity_id"].split(".")[0]
@@ -48,9 +55,12 @@ def build_system_context(system: str) -> str:
 
     lines = [f"### {system.capitalize()} System"]
     for domain, entity_ids in sorted(domains.items()):
-        lines.append(f"\n**{domain}** ({len(entity_ids)})")
-        for eid in entity_ids:
-            lines.append(f"  - {eid}")
+        if domain in DETAIL_DOMAINS:
+            lines.append(f"\n**{domain}** ({len(entity_ids)})")
+            for eid in entity_ids:
+                lines.append(f"  - {eid}")
+        else:
+            lines.append(f"\n**{domain}**: {len(entity_ids)} entities (use get_entities to inspect)")
 
     summary = "\n".join(lines)
     context_cache[system]["summary"] = summary
@@ -160,7 +170,10 @@ tools = [
 def process_tool_call(tool_name: str, tool_input: dict):
     system = tool_input.get("system")
     if tool_name == "get_entities":
-        return ha_request(system, "GET", "states")
+        states = ha_request(system, "GET", "states")
+        if isinstance(states, list):
+            return [{"entity_id": s["entity_id"], "state": s["state"]} for s in states]
+        return states
     elif tool_name == "get_services":
         return ha_request(system, "GET", "services")
     elif tool_name == "get_automations":
@@ -268,7 +281,7 @@ def root():
 @app.post("/chat")
 def chat(prompt: Prompt):
     session_id = prompt.session_id or str(uuid.uuid4())
-    messages = list(sessions.get(session_id, []))
+    messages = list(sessions.get(session_id, []))[-20:]  # keep last 20 messages
     messages.append({"role": "user", "content": prompt.message})
 
     while True:
