@@ -205,12 +205,15 @@ HTML = """<!DOCTYPE html>
         #chat { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         .message { max-width: 80%; padding: 10px 14px; border-radius: 12px; line-height: 1.5; white-space: pre-wrap; }
         .user { align-self: flex-end; background: #0f3460; }
-        .assistant { align-self: flex-start; background: #16213e; border: 1px solid #333; }
+        .assistant { align-self: flex-start; background: #16213e; border: 1px solid #333; position: relative; padding-bottom: 28px; }
         .thinking { align-self: flex-start; color: #888; font-style: italic; padding: 10px 14px; }
         #input-area { display: flex; gap: 8px; padding: 16px; background: #16213e; border-top: 1px solid #333; }
         #input { flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #0f0f1a; color: #eee; font-size: 1rem; }
         button { padding: 10px 20px; border-radius: 8px; border: none; background: #e94560; color: white; cursor: pointer; font-size: 1rem; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .copy-btn { position: absolute; bottom: 6px; right: 8px; padding: 2px 10px; font-size: 0.72rem; background: none; border: 1px solid #444; color: #888; border-radius: 4px; opacity: 0; transition: opacity 0.15s; }
+        .assistant:hover .copy-btn { opacity: 1; }
+        .copy-btn.copied { color: #4caf50; border-color: #4caf50; }
     </style>
 </head>
 <body>
@@ -227,7 +230,27 @@ HTML = """<!DOCTYPE html>
             const chat = document.getElementById('chat');
             const div = document.createElement('div');
             div.className = cls;
-            div.textContent = text;
+
+            if (cls.includes('assistant')) {
+                const textSpan = document.createElement('span');
+                textSpan.textContent = text;
+                div.appendChild(textSpan);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(text).then(() => {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 2000);
+                    });
+                };
+                div.appendChild(copyBtn);
+            } else {
+                div.textContent = text;
+            }
+
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
             return div;
